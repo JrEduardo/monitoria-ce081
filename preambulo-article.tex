@@ -1,0 +1,82 @@
+%% ======================================================================
+%% Eduardo Junior
+%% eduardo.jr@ufpr.br
+%% 22-11-2015
+%% ======================================================================
+%% Template latex article para ser usado na opção `include: in_header:`
+%% de arquivos Rmd com ouput pdf_document
+
+%% ======================================================================
+%% Fontes
+
+\usepackage{palatino}
+\usepackage{eulervm}
+\usepackage[none]{ubuntu}
+\usepackage{verbatim}
+
+\renewcommand{\ttdefault}{ubuntumono}
+\renewcommand{\ttfamily}{\fontUbuntuMono}
+\makeatletter
+\def\verbatim@font{\small\fontUbuntuMono}
+\makeatother
+
+%% ======================================================================
+%% Colorindo ambiente verbatim
+
+\usepackage{etoolbox}
+\makeatletter
+\preto{\@verbatim}{\topsep=2pt \partopsep=2pt}
+\makeatother
+
+\let\oldv\verbatim
+\let\oldendv\endverbatim
+
+\def\verbatim{\setbox0\vbox\bgroup\oldv}
+\def\endverbatim{\oldendv\egroup \hspace*{-0.6ex}\colorbox[gray]{0.93}{\usebox0}}
+% \def\endverbatim{\oldendv\egroup \usebox0}
+
+%% ======================================================================
+%% Define marcações de topo de página
+\usepackage{fancyhdr}
+\fancyhf{}
+\fancyhead[L]{Eduardo E. R. Junior \& Andryas Waurzenczak}
+\fancyfoot[R]{\bfseries{\thepage}}
+%\fancyfoot[C]{RESTRICTED DISTRIBUTION}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\pagestyle{fancy}
+
+\makeatletter
+\let\ps@plain\ps@fancy 
+\makeatother
+
+%% ======================================================================
+%% Define parâmetros para elaboração de exercícios
+\usepackage[final, answers]{probsoln}
+  \setkeys{probsoln}{fragile} % Para permitir verbatim no \defproblem.
+
+\usepackage{xcolor}
+\definecolor{colres}{HTML}{808080}
+
+\newcommand{\resp}[1] {
+\textbf{\footnotesize #1}
+}
+
+\newenvironment{myalign*}
+ {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}%
+  \csname flalign*\endcsname}
+ {\csname endflalign*\endcsname\ignorespacesafterend}
+
+%% ======================================================================
+%% Pacotes
+\usepackage{multicol}
+\usepackage[bottom]{footmisc}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{multicol}

@@ -1,0 +1,5 @@
+pdf_document:
+  toc: false
+  keep_tex: no
+  includes:
+    in_header: preambulo-article.tex
