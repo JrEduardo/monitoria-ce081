@@ -1,0 +1,333 @@
+% Lista de Exercícios
+
+\vspace*{-1.2cm}
+\begin{center}
+\LARGE \textbf{Distribuições de Probabilidades} \\[0.2cm]
+\normalsize
+Monitoria CE081 - atualizado em `r format(Sys.time(), "%d de %B de %Y às
+%X")` 
+\end{center}
+
+```{r setup, include = FALSE}
+
+source("_setup.R")
+
+```
+
+<!--------------------------------------------- -->
+<!-- Item Kobe Bryant -->
+\begin{defproblem}{kobe-bryant}
+
+  Recentemente o jogador de basquete Kobe Bryant encerrou sua
+  carreira. Em sua última partida ele chegou a incríveis 60 pontos
+  marcados na vitória do Lakers sobre o Utah Jazz. Sabendo que a média
+  de pontos de Kobe na sua última temporada foi de 17,6 pontos qual a
+  probabilidade dele ter marcado os 60 pontos naquela última partida? A
+  que fatores você atribuiria este feito do jogador? \resp{aprox. 0}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+
+X: número de pontos de Kobe em uma partida de basquete \\
+X $ \sim \textrm{Poisson}(\lambda = 17,6)$
+
+\begin{myalign*}
+    & P(X = 60) = \frac{e^{-17,6}\, 17,6^{60}}{60!} \approx 0 & \\
+\end{myalign*}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Futebol -->
+\begin{defproblem}{futebol}
+
+  Na Liga Paulistana de Futebol Amador o time \textit{Unidos do Colombo}
+  obtém a média de 0,70 gols marcados no primeiro tempo de jogo. Este
+  campeonato é constituído por fases onde os times jogam 2 jogos (um
+  como mandante e outro como visitante), quem tiver o maior número de
+  gols acumulado ganha e em caso de empate recorre-se aos pênaltis. O
+  time está nas semi-finais do campeonato e perdeu o primeiro jogo por
+  2x0. Supondo equidade no comportamento do time em ambos os tempos de
+  jogo responda: \\[0.2cm]
+  \begin{textenum}
+    \item Qual a probabilidade do \textit{Unidos do Colombo} marcar 1
+    gol no primeiro tempo? \resp{`r dpois(1, 0.7)`} \\[0.1cm]
+    \item Qual a probabilidade deles marcarem mais que 2 gols no segundo
+    tempo? \resp{`r ppois(2, 0.7, lower = FALSE)`} \\[0.1cm]
+    \item Qual a probabilidade do \textit{Unidos do Colombo} avançar
+    para a próxima fase sem necessitar dos pênaltis?
+    \resp{`r ppois(2, 1.4, lower = FALSE)`}
+  \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+
+X: número de gols marcados em um tempo de jogo \\
+X $ \sim \textrm{Poisson}(\lambda = 0,7)$
+
+\begin{myalign*}
+    & P(X = 1) = \frac{e^{-0,7}\, 0,7^{1}}{1!} = `r dpois(1, 0.7)` &
+\end{myalign*}
+
+\begin{myalign*}
+    P(X > 2) &= 1 - P(X \leq 2) & \\
+    & = 1 - [P(X = 0) + P(X = 1) + P(X = 2)] & \\
+    & = 1 - \overset{}{e^{-0,7}} \left ( \frac{0,7^{0}}{0!} + 
+    \frac{0,7^{1}}{1!} + \frac{0,7^{2}}{2!} \right )
+    = `r ppois(2, 0.7, lower = FALSE)` \\
+\end{myalign*}
+
+$Y$: número de gols marcados em ambos os tempos de jogo \\
+$Y \sim \textrm{Poisson}(\lambda = 2(0,7) = 1.4)$
+
+\begin{myalign*}
+    P(Y > 2) &= 1 - P(Y \leq 2) & \\
+    & = 1 - [P(Y = 0) + P(Y = 1) + P(Y = 2)] & \\
+    & = 1 - \overset{}{e^{-1,4}}\left ( \frac{1,4^{0}}{0!} +
+    \frac{1,4^{1}}{1!} + \frac{1,4^{2}}{2!} \right )
+    = `r ppois(2, 1.4, lower = FALSE)` 
+\end{myalign*}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Frutos -->
+\begin{defproblem}{feijao}
+
+  Seu José, um micro agricultor, está planejando trocar a cultivar de
+  feijão que será plantada em seu terreno e para tal pediu auxílio a um
+  amigo estatístico. Na colheita anterior, seu José teve uma média de 4
+  grãos de feijão por vagem. E a nova cultivar, segundo a Embrapa,
+  proporciona o número de grãos por vagem ($X$) com as seguintes
+  probabilidades, calculadas a partir de uma distribuição Poisson.
+
+```{r, include = FALSE}
+
+## Define os dados 
+x <- 0:6
+px <- dpois(x, 3)
+
+## Constrói a tabela
+da <- data.frame(x, px)
+names(da) <- c("X", "P(X = x)")
+xt <- xtable(t(mapply("format", da, digits = c(0, 4))),
+             align = "cccccccc")
+print(xt, include.colnames = FALSE, 
+      hline.after = c(1,0,2), comment = FALSE)
+
+```
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cccccccc}
+   \hline
+X & 0 & 1 & 2 & 3 & 4 & 5 & 6 \\ 
+   \hline
+P(X = x) & 0.04979 & 0.14936 & 0.22404 & 0.22404 & 0.16803 & 0.10082 & 0.05041 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+Considerando a distribuição de probabilidades descrita, faça o que se
+pede: \\[0.2cm]
+\begin{textenum}
+    \item Defina a variável X representada na distribuição de
+    probabilidades e o domínio de X (os valores que X pode
+    assumir).\\[0.1cm]
+    \item Qual a taxa de grãos por vagem ($\lambda$) considerada pela
+    Embrapa para cálculo das probabilidades? \resp{3} \\[0.1cm]
+    \item Calcule as probabilidades de haver pelo menos quatro,
+    exatamente quatro e mais que 4 grãos de feijão em uma
+    vagem. \resp{0,815; 0,168; 0,185}\\[0.1cm]
+    \item O que o amigo estatístico de seu José poderia indicar-lhe
+    sobre a escolha desta nova cultivar?
+\end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+
+X: número de grão de feijão por vagem, $\quad X \in \mathbb{Z}_+$, ou
+seja, $x = 0, 1, 2, ...$ \\
+$X \sim \textrm{Poisson}(\lambda)$
+
+Sabemos, pela distribuição dada que $P(X = 0) = 0,04979$. Então,
+
+\begin{myalign*}
+    P(X = 0) &= \overset{}{e^{-\lambda}}\, \overset{}{\lambda^{0}}/0! =
+    0,04979 &\\ 
+    & = \overset{}{e^{-\lambda}} = 0,04979 &\\
+    & = \overset{}{\ln(e^{-\lambda})} = \ln(0,04979) &\\
+    & = \lambda = 3
+\end{myalign*}
+
+\begin{myalign*}
+    P(X \leq 4) &= P(X = 0) + P(X = 1) + P(X = 2) + P(X = 3) + P(X = 4)
+    &\\
+    &= `r paste(round(dpois(0:4, 3), 5), collapse = "+")` = `r sum(round(dpois(0:4, 3), 5))`
+\end{myalign*}
+
+\begin{myalign*}
+    P(X = 4) &= P(X = 4) = 0,168 &
+\end{myalign*}
+
+\begin{myalign*}
+    P(X > 4) &= 1 - P(X \leq 4) = 1 - 0,815 = 0,185 &
+\end{myalign*}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Poisson1 -->
+\begin{defproblem}{poisson1}
+
+  Seja X uma variável aleatória que se distribua conforme modelo Poisson
+  de $\lambda = 5$ em certo espaço de tempo t, ou seja, $X \sim
+  \textrm{Poisson}(\lambda t = 5t)$. Calcule: \\[0.2cm]  
+\begin{textenum}
+    \item P(X = 3 $\mid$ t = 1 ) \resp{`r dpois(3, 5)`} \\[0.1cm]
+    \item P(X > 3 $\mid$ t = 1 ) \resp{`r ppois(3, 5, lower = F)`}
+    \\[0.1cm]
+    \item P(X $\leq$ 2 $\mid$ t = 1 ) \resp{`r ppois(2, 5)`} \\[0.1cm]
+    \item P(2 < X $\leq$ 6 $\mid$ t = 1 ) \resp{`r sum(dpois(3:6, 5))`}
+    \\[0.1cm]
+    \item E[X $\mid$ t = 2] e V[X $\mid$ t = 2], a média e a variância
+    de X no espaço de tempo t = 2. \resp{10; 10} \\[0.1cm]
+    \item As probabilidades dos itens (a), (b), (c) e (d) considerando
+    as contagens no espaço de tempo t = 2. \resp{`r dpois(3, 10)`; 
+    `r ppois(3, 10, lower = FALSE)`; `r ppois(5, 10)`;
+    `r sum(dpois(3:6, 10))`}
+\end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+
+RESOLVER
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Gráfica -->
+\begin{defproblem}{grafica}
+
+  Uma gráfica têm como principal serviço a impressão de calendários
+  personalizados. Para cada calendário vendido lucra-se R\$5,00. Ainda,
+  como garantia de qualidade, não se cobra os calendários que
+  apresentarem quaisquer erros de impressão. Nos registros de produção
+  da gráfica constatou-se que já foram produzidos 100 calendários e
+  destes, foram encontrados 50 erros de impressão. Considerando o padrão
+  histórico de produção da gráfica, qual o lucro esperado por calendário?
+  Neste contexto, você manteria a garantia de não cobrar os que
+  apresentarem defeitos? \resp{Lucro esperado R\$3,04}
+  \begin{onlysolution}
+  \newline \it \color{black!80!blue!80}
+
+X: número de erros de impressão por calendário \\
+$X \sim \textrm{Poisson}(50/100 = 0,5)$
+
+O lucro esperado da empresa será o produto entre o lucro obtido por um
+calendário sem erros de impressão e a probabilidade de produzir
+calendários sem erro. Conforme variável aleatório X definida acima,
+temos:
+
+\begin{myalign*}
+    &P(X = 0) = \overset{}{e^{-0,5}}\, \overset{}{0,5^{0}}/0! =
+    0,607 &\\ 
+    &\textrm{Lucro esperado} = P(X = 0)\, R\$5,00 = R\$3,04
+\end{myalign*}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Praia -->
+\begin{defproblem}{praia}
+
+  Um dos principais problemas nas regiões litorâneas é o índice de
+  afogamento, principalmente no verão. Em uma cidade do litoral do
+  Paraná o número de afogamentos nesta época é de 5 a cada 1.000
+  banhistas. Sendo assim, calcule as probabilidades:\\[0.2cm]
+\begin{textenum}
+    \item Ocorrem pelo menos 2 afogamentos em 1.000 banhistas.
+    \resp{`r ppois(2, 5)`}\\[0.1cm]
+    \item Ocorrem pelo menos 4 afogamentos em 2.000 banhistas.
+    \resp{`r ppois(4, 10)`}
+\end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+
+X: número de afogamentos em 1.000 banhistas \\
+X $ \sim \textrm{Poisson}(\lambda = 5)$
+
+\begin{myalign*}
+    P(X \leq 2) &= P(X = 0) + P(X = 1) + P(X = 2) & \\
+    & = \overset{}{e^{5}} \left ( \frac{5^{0}}{0!} + 
+    \frac{5^{1}}{1!} + \frac{5^{2}}{2!} \right )
+    = `r ppois(2, 5)` \\
+\end{myalign*}
+
+Y: número de afogamentos em 2.000 banhistas \\
+Y $ \sim \textrm{Poisson}(\lambda = 5(2) = 10)$
+
+\begin{myalign*}
+    P(X \leq 4) &= P(X = 0) + P(X = 1) + P(X = 2) + P(X = 3) + P(X = 4)
+    & \\
+    & = \overset{}{e^{10}} \left (
+    \frac{10^{0}}{0!} + \frac{10^{1}}{1!} + \frac{10^{2}}{2!} +
+    \frac{10^{3}}{3!} + \frac{10^{3}}{4!} \right )
+    = `r ppois(4, 10)` 
+\end{myalign*}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item  -->
+<!-- \begin{defproblem}{futebol} -->
+<!-- \begin{onlysolution} -->
+<!-- \newline \it \color{black!80!blue!80} -->
+<!-- RESOLVER -->
+<!-- \end{onlysolution} -->
+<!-- \end{defproblem} -->
+
+<!--==================================================================== -->
+<!-- Exibe os exercícios elaborados  -->
+
+\begin{enumerate}[leftmargin=*]
+    \renewcommand\labelenumi{\bfseries\theenumi.}
+    \item \useproblem{kobe-bryant}
+    \item \useproblem{futebol}
+    \item \useproblem{feijao}
+    \item \useproblem{poisson1}
+    \item \useproblem{grafica}
+    \item \useproblem{praia}
+\end{enumerate}
+
+<!--------------------------------------------- -->
+<!-- CMR BUG -->
+<!-- --- -->
+<!-- output: pdf_document -->
+<!-- --- -->
+<!-- <\!-- It's work -\-> -->
+<!-- \begin{equation} -->
+<!--     P(X = x) = \frac{e^\lambda \lambda^x}{x!} -->
+<!-- \end{equation} -->
+<!--  -->
+<!-- <\!-- It's work -\-> -->
+<!-- \begin{align} -->
+<!--     P(X = x) = \frac{e^\lambda \lambda^x}{x!} -->
+<!-- \end{align} -->
+<!--  -->
+<!-- <\!-- It's work -\-> -->
+<!-- \begin{flalign} -->
+<!--     P(X = x) = \frac{e_\lambda \lambda_x}{x!} -->
+<!-- \end{flalign} -->
+<!--  -->
+<!-- <\!-- It's  work -\-> -->
+<!-- \begin{flalign} -->
+<!--     &P(X = x) = \frac{e^\lambda \lambda^x}{x!}& -->
+<!-- \end{flalign} -->
+<!-- <\!-- It's don't work -\-> -->
+<!-- \begin{flalign} -->
+<!--     &P(X = x) = e^\lambda & -->
+<!-- \end{flalign} -->
+<!-- <\!-- It's work -\-> -->
+<!-- \begin{flalign} -->
+<!--     &P(X = x) = \overset{}{e^{e^\lambda}} & -->
+<!-- \end{flalign} -->
+
+<!-- Potentiation only works if accomodated in others equation's
+functions (like \frac{}{}, \overset{}{}, \underline{}, ...) -->
