@@ -10,3 +10,5 @@ Estatística Descritiva e Inferencial Básica ministrada pelo Departamento
 de Estatística de Universidade Federal do Paraná.
 
 Os materiais já elaborados são:
+
+ - [Exercícios Distribuição Poisson](https://github.com/JrEduardo/monitoria-ce081/blob/master/lista01.pdf)
