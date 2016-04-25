@@ -1,0 +1,145 @@
+% Lista de Exercícios
+
+\vspace*{-1.2cm}
+\begin{center}
+\LARGE \textbf{Distribuições de Probabilidades} \\[0.2cm]
+\normalsize
+Monitoria CE081 - atualizado em `r format(Sys.time(), "%d de %B de %Y às
+%X")` 
+\end{center}
+
+```{r setup, include = FALSE}
+
+source("_setup.R")
+
+drawN <- function(lwr = -3, upr = 3, Xc = 1, labels = Xc,
+                  type = 1:3) {
+    x <- seq(-3, 3, length.out = 100)
+    fx <- dnorm(x)
+    plot(fx ~ x, type = "l", axes = FALSE, xlab = "", ylab = "",
+         ylim = c(0, max(fx) * 1.17))
+    axis(1, c(-10, 10), labels = c("", ""))
+    axis(1, Xc, labels = labels)
+    if (type[1] == 1) {
+        xx <- seq(0, Xc, length = 50)
+        leg <- expression(P(0<=~Z<=~Z[c]))
+    }
+    if (type[1] == 2) {
+        xx <- seq(-5, Xc, length = 50)
+        leg <- expression(P(Z<=~Z[c]))
+    }
+    if (type[1] == 3) {
+        xx <- seq(Xc, 5, length = 50)
+        leg <- expression(P(Z>=~Z[c]))
+    }
+    fxx <- dnorm(xx)
+    polygon(c(xx, rev(xx)), c(fxx, rep(0, 50)), density = 20)
+    legend("topleft", bty = "n", density = 30,
+           legend = leg, cex = 1.2)
+    box("figure")
+}
+
+```
+
+<!--------------------------------------------- -->
+<!-- Prefácio à resolução -->
+\begin{defproblem}{prefacio}
+\begin{onlysolution}
+A resolução (detalhada) dos exercícios é feita com base nas
+probabilidades tabeladas da distribuição Normal Padrão na forma: $P(0
+\leq Z \leq Z_c)$ (conforme figura 1 à esquerda). Contudo, para qualquer
+tabulação da distribuição chegar-se-á ao mesmo resultado.
+
+```{r, fig.height = 2, fig.width = 6, fig.cap = "Tipos de distribuições Normais tabelas"}
+
+par(mfrow = c(1, 3), mar = c(2, 1, 0, 1))
+drawN(Xc = 1, labels = expression(Z[c]), type = 1)
+drawN(Xc = 1, labels = expression(Z[c]), type = 2)
+drawN(Xc = 1, labels = expression(Z[c]), type = 3)
+
+```
+
+Ressalta-se que, embora os procedimentos para resolução sejam exibidos,
+os cálculos são realizados via procedimentos computacionais, portanto
+arrendondamentos podem alterar ligeiramente os resultados. Todavia, se
+houver algum resultado discrepante informe o monitor para correção.
+\end{onlysolution}
+\end{defproblem}
+
+
+<!--------------------------------------------- -->
+<!-- Item Kobe Bryant -->
+\begin{defproblem}{normal1}
+
+  (Usando a tabela) Calcule as probabilidades abaixo considerando X uma
+  variável aleatória normalmente distribuída com média $\mu$ e variância
+  $\sigma^2$: \\[0.2cm]
+  \begin{textenum}
+    \item $P(X \geq 1 \mid \mu = 0,\, \sigma^2 = 1)$
+        \resp{`r pnorm(1, lower = FALSE)`} \\[0.1cm]
+    \item $P(X > -2 \mid \mu = 0,\, \sigma^2 = 1)$
+        \resp{`r pnorm(-2, lower = FALSE)`} \\[0.1cm]
+    \item $P(X < 1,5 \mid \mu = 0,\, \sigma^2 = 1)$
+        \resp{`r pnorm(1.5, lower = TRUE)`} \\[0.1cm]
+    \item $P(X \leq -0,5 \mid \mu = 0,\, \sigma^2 = 1)$
+        \resp{`r pnorm(-0.5, lower = TRUE)`} \\[0.1cm]
+    \item $P(-1 < X < 1,5 \mid \mu = 0,\, \sigma^2 = 1)$
+        \resp{`r diff(pnorm(c(-1, 1.5)))`} \\[0.1cm]
+    \item $P(1 < X \leq 1,5 \mid \mu = 0,\, \sigma^2 = 1)$
+        \resp{`r diff(pnorm(c(1, 1.5)))`} \\[0.1cm]
+    \item $P(X \leq 9 \mid \mu = 10,\, \sigma^2 = 9)$
+        \resp{`r pnorm(9, 10, 3)`}
+  \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\begin{multicols}{2}
+
+(a) Na tabela $P(0 \leq Z \leq 1) = $ `r pnorm(1) - 0.5`.\\ Portanto
+$P(Z \geq 1) =$ 0,5 - `r pnorm(1) - 0.5` = `r pnorm(1, lower = FALSE)`
+
+(b) Na tabela $P(0 \leq Z \leq 2) = $ `r pnorm(2) - 0.5`.\\ Portanto
+$P(Z > -2) =$ `r pnorm(2) - 0.5` + 0,5 = `r pnorm(-2, lower = FALSE)`
+
+(c) Na tabela $P(0 \leq Z \leq 1,5) = $ `r pnorm(1.5) - 0.5`.\\ Portanto
+$P(Z < 1,5) =$ `r pnorm(1.5) - 0.5` + 0,5 = `r pnorm(1.5)`
+
+(d) Na tabela $P(0 \leq Z \leq 0,5) = $ `r pnorm(0.5) - 0.5`.\\ Portanto
+$P(Z \leq -0,5) =$ 0,5 - `r pnorm(0.5) - 0.5` = `r pnorm(-0.5)`
+
+\vfill \columnbreak
+
+(e) Na tabela $P(0 \leq Z \leq 1) = $ `r pnorm(1) - 0.5` e $P(0 \leq Z
+\leq 1,5) = $ `r pnorm(1.5) - 0.5`. Portanto $P(-1 < Z < 1,5) =$
+`r pnorm(1) - 0.5` + `r pnorm(1.5) - 0.5` = `r diff(pnorm(c(-1, 1.5)))`
+
+(f) Na tabela $P(0 \leq Z \leq 1) = $ `r pnorm(1) - 0.5` e $P(0 \leq Z
+\leq 1,5) = $ `r pnorm(1.5) - 0.5`. Portanto $P(1 < Z \leq 1,5) =$
+`r pnorm(1.5) - 0.5` - `r pnorm(1) - 0.5` = `r diff(pnorm(c(1, 1.5)))`
+
+(g) Padronizando $P\left ( \frac{X-\mu}{\sigma} \leq
+\frac{9-10}{\sqrt{9}} \right ) = P(Z \leq $ `r (9-10)/3`). Na tabela
+$P(0 \leq Z \leq 0,333) = $ `r pnorm(1/3) - 0.5`. Portanto $P(Z \leq -0,333)
+=$ 0,5 - `r pnorm(1/3) - 0.5` = `r pnorm(-1/3)`
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item  -->
+<!-- \begin{defproblem}{futebol} -->
+<!-- \begin{onlysolution} -->
+<!-- \newline \it \color{black!80!blue!80} -->
+<!-- RESOLVER -->
+<!-- \end{onlysolution} -->
+<!-- \end{defproblem} -->
+
+<!--==================================================================== -->
+<!-- Exibe os exercícios elaborados  -->
+
+\useproblem{prefacio}
+
+\begin{enumerate}[leftmargin=*]
+    \renewcommand\labelenumi{\bfseries\theenumi.}
+    \item \useproblem{normal1}
+\end{enumerate}
+
