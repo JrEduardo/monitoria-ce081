@@ -13,8 +13,8 @@ Monitoria CE081 - atualizado em `r format(Sys.time(), "%d de %B de %Y às
 source("_setup.R")
 
 drawN <- function(lwr = -3, upr = 3, Xc = 1, labels = Xc,
-                  type = 1:3) {
-    x <- seq(-3, 3, length.out = 100)
+                  type = 1:3, legend = TRUE) {
+    x <- seq(lwr, upr, length.out = 100)
     fx <- dnorm(x)
     plot(fx ~ x, type = "l", axes = FALSE, xlab = "", ylab = "",
          ylim = c(0, max(fx) * 1.17))
@@ -34,9 +34,61 @@ drawN <- function(lwr = -3, upr = 3, Xc = 1, labels = Xc,
     }
     fxx <- dnorm(xx)
     polygon(c(xx, rev(xx)), c(fxx, rep(0, 50)), density = 20)
-    legend("topleft", bty = "n", density = 30,
-           legend = leg, cex = 1.2)
+    if (legend) {
+        legend("topleft", bty = "n", density = 30,
+               legend = leg, cex = 1.2)
+    }
     box("figure")
+}
+
+drawZN <- function(lwr = -3, upr = 3, mu = 0, sigma = 1,
+                   qz = c(-1, 1), type = 1:3, angle = NULL,
+                   las = 1, legend = FALSE, box = TRUE,
+                   labelx = c("X", "barX")) {
+    # @param quantis lista de vetores de tamanho, os
+    # vetores tem em seu primeiro elemento o quantil de
+    # Z(0, 1) e no segundo o quantil de X(mu, sigma)
+    ##-------------------------------------------
+    if (labelx[1] == "barX") labelx[1] <- expression(bar(X))
+    ##-------------------------------------------
+    draw.prob <- function(x, type = 1:3) {
+        if (is.null(angle)) angle <- sample(0:90, 1)
+        if (type[1] == 1) {
+            if (x <= 0) xx <- seq(x, 0, length = 50)
+            if (x  > 0) xx <- seq(0, x, length = 50)
+        }
+        if (type[1] == 2) xx <- seq(-5, x, length = 50)
+        if (type[1] == 3) xx <- seq(x, 5, length = 50)
+        fxx <- dnorm(xx)
+        polygon(c(xx, rev(xx)), c(fxx, rep(0, 50)),
+                density = 12, angle = angle)
+    }
+    ##-------------------------------------------
+    x <- seq(lwr, upr, length.out = 100)
+    fx <- dnorm(x)
+    par(mgp = c(0, 0.5, 0), tcl = -0.3, mar = c(2, 1, 0, 1))
+    plot(fx ~ x, type = "l", axes = FALSE, xlab = "", ylab = "",
+         ylim = c(-0.12, max(fx) * 1.05))
+    ##-------------------------------------------
+    qx <- qz * sigma + mu
+    sapply(qz, draw.prob, type = type)
+    ##-------------------------------------------
+    axis(1, c(-10, 0, 10), labels = c("", mu, ""), line = -3, las = las)
+    axis(1, upr*1.05, labels = labelx[1], line = -3,
+         tick = FALSE, cex.axis = 1.3)
+    axis(1, qz, labels = round(qx, 2), line = -3, las = las)
+    axis(1, c(-10, 0, 10), labels = c("", 0, ""), las = las)
+    axis(1, upr*1.05, labels = "Z", tick = FALSE, cex.axis = 1.3)
+    axis(1, qz, labels = round(qz, 2), las = las)
+    ##-------------------------------------------
+    if (type[1] == 1) leg <- expression(P(0<=~Z<=~Z[c]))
+    if (type[1] == 2) leg <- expression(P(Z<=~Z[c]))
+    if (type[1] == 3) leg <- expression(P(Z>=~Z[c]))
+    if (legend) {
+        legend("topleft", bty = "n", density = 30,
+               legend = leg, cex = 1.2)
+    }
+    if (box) box("figure", col = "#33335B")
 }
 
 ```
@@ -70,7 +122,6 @@ houver algum resultado discrepante informe o monitor para correção.
 <!--------------------------------------------- -->
 <!-- Item Kobe Bryant -->
 \begin{defproblem}{normal1}
-
   (Usando a tabela) Calcule as probabilidades abaixo considerando X uma
   variável aleatória normalmente distribuída com média $\mu$ e variância
   $\sigma^2$: \\[0.2cm]
@@ -126,12 +177,348 @@ $P(0 \leq Z \leq 0,333) = $ `r pnorm(1/3) - 0.5`. Portanto $P(Z \leq -0,333)
 
 <!--------------------------------------------- -->
 <!-- Item  -->
-<!-- \begin{defproblem}{futebol} -->
-<!-- \begin{onlysolution} -->
-<!-- \newline \it \color{black!80!blue!80} -->
-<!-- RESOLVER -->
-<!-- \end{onlysolution} -->
-<!-- \end{defproblem} -->
+\begin{defproblem}{casquinha}
+
+  Uma lanchonete adquiriu recentemente uma máquina de sorvete italiano
+  automática. Sabe-se, pelo fabricante, que a máquina produz sorvetes
+  com uma variância de 400 gramas$^2$ e que somente 15,9\% dos sorvetes
+  produzidos tem peso inferior a 70 gramas. Supondo uma distribuição
+  Normal para a variável de interesse responda:\\[0.2cm]
+  \begin{textenum}
+    \item Qual a média de peso dos sorvetes produzidos pela máquina?
+      \resp{90 gramas} \\[0.1cm]
+    \item Qual a probabilidade de se produzir uma casquinha com peso
+    menor que 85 gramas? \resp{`r pnorm(85, 90, 20)`} \\[0.1cm]
+    \item Sendo que o peso anunciado da casquinha de 100 gramas e
+    tolera-se casquinhas dentre 80 e 120 gramas. Qual a proporção de
+    casquinhas produzidas com peso inferior a especificação? E peso
+    superior a especificação? \resp{`r pnorm(80, 90, 20)*100`\% e  
+    `r pnorm(120, 90, 20, lower = FALSE)*100`\%} \\[0.1cm]
+    \item Você acredita que a máquia atende satisfatoriamente as
+    especificações? O que deve ser adequado na distribuição dos pesos
+    para que se atenda as especificações? \resp{O parâmetro de locação
+    $\mu$ deve estar de acordo como o especificado.}
+  \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\vspace{-0.6cm}
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+
+a <- pnorm(70, 90, 20)
+b <- pnorm(85, 90, 20)
+c1 <- pnorm(80, 90, 20)
+c2 <- pnorm(120, 90, 20, lower = FALSE)
+
+drawZN(mu = 90, sigma = 20, qz = c(-1/2, 3/2), angle = 90)
+text(x = -2, y = dnorm(-2)*1.2, label = round(a, 3), cex = 1.2)
+abline(v = 0.5, lty = 2, col = 4)
+par(new = TRUE)
+drawZN(mu = 90, sigma = 20, qz = -1, type = 2, angle = 0)
+text(x = 1.5/2, y = dnorm(1.5/2) * 1.2, label = round(1 - c1 + c2, 3),
+     cex = 1.2)
+
+```
+
+\vfill
+\columnbreak
+X: peso das casquinhas em gramas, $X \sim N(\mu, 400)$
+
+(a) Sabe-se que $P(X < 70) = 0,159$, consequentemente $P\left (
+\frac{X-\mu}{\sigma} < \frac{70-\mu}{\sqrt{400}} \right ) = P(Z <
+z_{0,159}) = 0,159$. Pela tabela temos que $z_{0,159} = 1$, ou seja, 
+$\frac{70-\mu}{\sqrt{400}} = 1$. Assim, isolando $\mu$ chegamos a $\mu =
+90$.
+
+(b) $P(X < 85 ) = P\left ( \frac{X-\mu}{\sigma} <
+\frac{85-90}{\sqrt{400}} \right ) = P(Z < -0,25)$ = `r b`.
+
+(c) Inferior $\Rightarrow P(X \leq 80) = P\left ( \frac{X-\mu}{\sigma}
+\leq \frac{80-90}{\sqrt{400}} \right ) = P(Z \leq -0,5) =$ `r c1` \\
+Superior $\Rightarrow P(X \geq 120) = P\left ( \frac{X-\mu}{\sigma} \geq
+\frac{120-90}{\sqrt{400}} \right ) = P(Z \geq 1,5) =$ `r c2`
+
+(g) Interpretação pessoal, porém utilize as probabilidades calculadas e o
+gráfico apresentado (a linha em vermelho representa o valor anunciado,
+100 g)
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+
+<!--------------------------------------------- -->
+<!-- Item  -->
+\begin{defproblem}{gravidez}
+  O prazo de duração de uma gravidez têm uma distribuição Normal com
+  média 268 dias e variância 225 dias$^2$. Definindo como prematura uma
+  criança que nascer com menos de 247 dias de gestação, responda:
+  \\[0.2cm]
+  \begin{textenum}
+    \item Qual a porcentagem de crianças nascidas prematuramente?
+    \resp{`r pnorm(247, 268, 15)`}\\[0.1cm]
+    \item Se tivéssemos interesse em mudar a definição de criança
+    prematura como sendo aquela cujo período de gestação está entre os
+    4\% menores, qual seria o tempo mínimo de gestação para que uma
+    criança não fosse considerada prematura?
+    \resp{`r qnorm(0.04, 268, 15)`}
+  \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\vspace{-0.6cm}
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+
+a <- pnorm(247, 268, 15)
+b <- qnorm(0.04, 268, 15)
+
+drawZN(mu = 268, sigma = 20, qz = c(-1.4, -1.75), type = 2, las = 2)
+text(x = -2.1, y = dnorm(2.1)*1.8, label = round(a, 3),
+     cex = 1.2)
+text(x = -2.5, y = dnorm(2.5)*2, label = 0.04, cex = 1.2)
+
+```
+
+X: tempo de duração de uma gravidez em dias, $X \sim N(268, 225)$
+
+(a) Prematura = nascer com menos de 247 dias. $P(X < 247) = P\left (
+\frac{X-\mu}{\sigma} < \frac{247-268}{\sqrt{225}} \right ) = P(Z < -1,4)
+=$ `r a`. 
+
+(b) Prematura, se a probabilidade do tempo de gestação à esquerda de um
+valor $q_p$ for menor que 0,04.\\ $P(X < q_p) = 0,04$, consequentemente,
+$P\left ( \frac{X-\mu}{\sigma} < \frac{q_p-268}{\sqrt{225}} \right ) =
+P(Z < z_{0,04}) = 0,04$. Pela tabela temos que $z_{0,04} =$  
+`r qnorm(0.04)`, ou seja, $\frac{q_p-268}{\sqrt{225}} =$  
+`r qnorm(0.04)`. Assim, isolando $q_p$ chegamos a $q_p$ = `r b`.
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Rosquinhas -->
+\begin{defproblem}{rosquinhas}
+
+  Uma fábrica de alimentos, especializada em rosquinhas, afirma que o
+  comprimento de suas rosquinhas se distribuem normalmente com média de
+  10 cm e desvio padrão de 4 cm. Recentemente um cliente desta empresa
+  pediu ressarcimento de todo o valor pago nas rosquinhas, pois a
+  especificação estava incorreta, esta constatação do cliente veio após
+  ele obter, de 25 rosquinhas, uma média de 9 cm. Você acredita que o
+  cliente teve razão em pedir ressarcimento?
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+
+a <- pnorm(9, 10, 4/sqrt(25))
+
+drawZN(mu = 10, sigma = 4/sqrt(25), qz = -1.25, type = 2,
+       labelx = "barX")
+text(x = -2.2, y = dnorm(2.2)*2, label = round(a, 3), cex = 1.2)
+
+```
+
+X: comprimento das rosquinhas em centímetros,\\ $X \sim N(\mu = 10,
+\sigma^2 = 16)$\\
+$\bar{X}:$ comprimento médio das rosquinhas em centímetros , $X \sim
+N(\mu = 10, \sigma_{\bar{x}}^2 = \sigma^2 / n = 16/25)$
+
+Assim, a probabilidade de ocorrer a situação informada pelo cliente ou
+algo mais extremo é $P(\bar{X} \leq 9) = P\left (
+\frac{\bar{X}-\mu}{\sigma_{\bar{x}}} < \frac{9-10}{4/\sqrt{25}} \right
+) = P(Z < -1,25) =$ `r a`
+
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Glicose -->
+\begin{defproblem}{glicose}
+  Suponha que a taxa normal de glicose no sangue humano é uma variável
+  aleatória com distribuição Normal de média 100 mg por 100 ml de sangue
+  e desvio padrão 6 mg por 100 ml de sangue. Calcule as probabilidades
+  de: \\[0.2cm]
+  \begin{textenum}
+    \item Apresentar taxa de glicose superior a 110 mg por 100 ml de
+    sangue. \resp{`r pnorm(110, 100, 6, lower = FALSE)`} \\[0.1cm]
+    \item Apresentar taxa de glicose entre 90 e 115 mg por 100 ml de
+    sangue. \resp{`r diff(pnorm(c(90, 115), 100, 6))`} \\[0.1cm]
+    \item Qual a probabilidade da interseção entre os eventos descritos
+    nos itens (a) e (b). \resp{`r pnorm(c(120, 90), 100, 6)`}
+  \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+a <- pnorm(110, 100, 6, lower = FALSE)
+b <- diff(pnorm(c(90, 115), 100, 6))
+c <- diff(pnorm(c(110, 115), 100, 6))
+
+qts <- (c(90, 110, 115) - 100)/6
+
+drawZN(lwr = -4, upr = 4, mu = 100, sigma = 6, qz = qts[2], type = 3)
+text(x = 2.8, y = dnorm(2.3)*2, label = round(a, 3), cex = 1.2)
+par(new = TRUE)
+drawZN(lwr = -4, upr = 4, mu = 100, sigma = 6, qz = qts[-2],
+       type = 1, angle = 90)
+text(x = 0.8, y = dnorm(0.8)*1.1, label = round(b, 3), cex = 1.2)
+
+```
+
+X: taxa normal de glicose no sangue humano em mg/100ml, $X \sim N(100, 6^2)$\\
+
+(a) $P(X > 110) = P\left ( \frac{X-\mu}{\sigma} >
+\frac{110-100}{6} \right ) = P(Z > 1,67) =$ `r a` \\[0.1cm]
+
+(b) $P(90 < X < 115) = P\left ( \frac{90-100}{6} < \frac{X-\mu}{\sigma} >
+\frac{115-100}{6} \right ) = P(-1,67 < Z < 2,5) =$ `r b` \\[0.1cm]
+
+(c) $P([X > 110] \bigcap [90 < X < 115]) = P(100 < X < 115) = P\left (
+\frac{110-100}{6} < \frac{X-\mu}{\sigma} > \frac{115-100}{6} \right ) =
+P(1,67 < Z < 2,5)$ = `r c` \\[0.1cm]
+
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item Distribuição amostral da média -->
+\begin{defproblem}{distmedia}
+  (Distribuição amostral da média) Seja X uma variável aleatória
+  normalmente distribuída com média 30 e variância 100. Calcule as
+  probabilidades descritas abaixo: \\[0.2cm]
+    \begin{textenum}
+      \item De X ser superior a 35.
+        \resp{`r pnorm(35, 30, 10, lower = FALSE)`} \\[0.1cm]
+      \item Da média de 4 amostras de X ser superior a 35.
+        \resp{`r pnorm(35, 30, 10/sqrt(4), lower = FALSE)`} \\[0.1cm]
+      \item Da média de 10 amostras de X ser superior a 35.
+        \resp{`r pnorm(35, 30, 10/sqrt(10), lower = FALSE)`} \\[0.1cm]
+      \item Da média de 16 amostras de X ser superior a 35.
+        \resp{`r pnorm(35, 30, 10/sqrt(16), lower = FALSE)`} \\[0.1cm]
+      \item Da média de 25 amostras de X ser superior a 35.
+        \resp{`r pnorm(35, 30, 10/sqrt(25), lower = FALSE)`} \\[0.1cm]
+    \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80} \small
+
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+x <- seq(0, 60, length.out = 200)
+fx <- dnorm(x, 30, 10)
+fx4 <- dnorm(x, 30, 10/sqrt(4))
+fx10 <- dnorm(x, 30, 10/sqrt(10))
+fx16 <- dnorm(x, 30, 10/sqrt(16))
+fx25 <- dnorm(x, 30, 10/sqrt(25))
+n <- c(1 , 4, 10, 16, 25)
+legenda <- parse(text = c("X",
+                          paste0("bar(X)[", n[-1], "]")))
+
+par(mgp = c(0, 0.5, 0), tcl = -0.3, mar = c(1.8, 0, 0, 0))
+plot(fx25 ~ x, type = "l", lty = 5,
+     axes = FALSE, xlab = "", ylab = "")
+axis(1)
+lines(fx16 ~ x, type = "l", lty = 4)
+lines(fx10 ~ x, type = "l", lty = 3)
+lines(fx4 ~ x, type = "l", lty = 2)
+lines(fx ~ x, type = "l", lty = 1)
+legend("topleft", lty = 1:5, bty = "n", legend = legenda)
+abline(v = 35, col = 4, lty = 2)
+box("figure", col = "#33335B")
+
+resp <- pnorm(35, 30, sqrt(100/n), lower = FALSE)
+
+```
+
+Seja $\bar{X}_n$: média de n observações da variável aleatória X.
+
+(a) $P(X > 35) = P\left ( \frac{X-\mu}{\sigma} >
+\frac{35-30}{\sqrt(100)} \right ) = P(Z > 0,5) =$ `r resp[1]`
+
+(b) $\bar{X}_4 \sim N(\mu = 4, \sigma_4^2 = 100 / 4)$\\
+$P(X > 35) = P\left ( \frac{X-\mu}{\sigma_4} >
+\frac{35-30}{\sqrt(100/4)} \right ) = P(Z > 1) =$ `r resp[2]`
+
+(c) $\bar{X}_{10} \sim N(\mu = 4, \sigma_4^2 = 100 / 10)$\\
+$P(X > 35) = P\left ( \frac{X-\mu}{\sigma_{10}} >
+\frac{35-30}{\sqrt(100/10)} \right ) = P(Z > 1,58) =$ `r resp[3]`
+
+(d) $\bar{X}_{16} \sim N(\mu = 4, \sigma_4^2 = 100 / 16)$\\
+$P(X > 35) = P\left ( \frac{X-\mu}{\sigma_{16}} >
+\frac{35-30}{\sqrt(100/16)} \right ) = P(Z > 2) =$ `r resp[4]`
+
+(e) $\bar{X}_{25} \sim N(\mu = 4, \sigma_4^2 = 100 / 25)$\\
+$P(X > 35) = P\left ( \frac{X-\mu}{\sigma_{25}} >
+\frac{35-30}{\sqrt(100/25)} \right ) = P(Z > 2,5) =$ `r resp[5]`
+
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Item embalagens -->
+\begin{defproblem}{corrida}
+  Um pai decidiu por incentivar seu filho a realizar percursos de
+  corrida de forma mais rápida, o percurso atualmente é realizado, em
+  média, com 45 minutos . O pai propôs um desafio em que, se o filho
+  realiza o percurso antes de 35 minutos recebe um prêmio de R\$10,00,
+  porém se o percurso for realizado em 1 hora ou mais o filho deve
+  pagar, ao pai R\$4,00. Supondo que a distribuição dos tempos para
+  realização do percurso seja normal e ainda que a variância seja 10
+  min$^2$. Quantos reais espera-se que o filho ganhe neste desafio, em
+  30 corridas? \resp{R\$ `r 30*(b*10 - a*4)`}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+a <- pnorm(60, 45, 10, lower = FALSE)
+b <- pnorm(35, 45, 10)
+
+drawZN(mu = 45, sigma = 10, qz = 1.5, type = 3)
+text(x = 2.2, y = dnorm(2.2)*2, label = round(a, 3), cex = 1.2)
+par(new = TRUE)
+drawZN(mu = 45, sigma = 10, qz = -1, type = 2)
+text(x = -2, y = dnorm(2)*2, label = round(b, 3), cex = 1.2)
+
+
+```
+
+X: tempo para realização do percurso. $X \sim N(45, 10^2)$ 
+L: Lucro esperado do filho no desafio
+
+\begin{myalign*}
+    L &= \textrm{P(ganhar)R\$10,00 - P(pagar)R\$4,00} & \\
+    &= P(X < 35)10 - P(X > 60)4 & \\
+    &=
+      P\left ( \frac{X-\mu}{\sigma} < \frac{35-45}{\sqrt{100}} \right
+    )10 - P\left ( \frac{X-\mu}{\sigma} > \frac{60-45}{\sqrt{100}}
+    \right )4 & \\
+    &= P(Z < -1)10 - P(Z > 1.5)4 & \\
+    &= (0,159)10 - (0,067)4 & \\
+    &= 1,59 - 0,268 = `r b*10 - a*4` & \\
+\end{myalign*}
+
+Assim L = `r b*10 - a*4` representa o lucro esperado em uma corrida,
+deseja-se para 30 corridas espera-se que o filho ganhe `r 30*(b*10 -
+a*4)` reais.
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
 
 <!--==================================================================== -->
 <!-- Exibe os exercícios elaborados  -->
@@ -141,5 +528,12 @@ $P(0 \leq Z \leq 0,333) = $ `r pnorm(1/3) - 0.5`. Portanto $P(Z \leq -0,333)
 \begin{enumerate}[leftmargin=*]
     \renewcommand\labelenumi{\bfseries\theenumi.}
     \item \useproblem{normal1}
+    \item \useproblem{casquinha}
+    \item \useproblem{gravidez}
+    \item \useproblem{rosquinhas}
+    \item \useproblem{glicose}
+    \pagebreak
+    \item \useproblem{distmedia}
+    \item \useproblem{corrida}
 \end{enumerate}
 
