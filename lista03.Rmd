@@ -1,0 +1,596 @@
+% Lista de Exercícios
+
+\vspace*{-1.2cm}
+\begin{center}
+\LARGE \textbf{Intervalos de confiança e teste de hipóteses} \\[0.2cm]
+\normalsize
+Monitoria CE081 - atualizado em `r format(Sys.time(), "%d de %B de %Y às
+%X")` 
+\end{center}
+
+```{r setup, include = FALSE}
+
+source("_setup.R")
+
+```
+
+```{r}
+
+## Função para realizar testes de hipóteses para média
+testProp <- function(x, n, pi_0 = 0.5, conf_level = 0.95,
+                     type = c("two.sided", "less", "greater")) {
+    type <- match.arg(type)
+    ## Calcula as quantidades a partir de estatísticas suficientes
+    p <- x/n
+    var <- (pi_0 * (1 - pi_0))
+    s <- sqrt(var)
+    zcalc <- sqrt(n) * (p - pi_0)/s
+    ## P-valores conforme tipo de teste
+    switch(type,
+           "less" = {
+               qs <- qnorm(1 - conf_level)
+               pval <- pnorm(zcalc)},
+           "greater" = {
+               qs <- qnorm(1 - conf_level, lower.tail = FALSE)
+               pval <- pnorm(zcalc, lower.tail = FALSE)},
+           "two.sided" = {
+               qs <- qnorm((1 - conf_level)/2)
+               pval <- 2 * pnorm(-abs(zcalc))}
+           )
+    L <- list(xbar = p, sdbar = s, n = n, type = type,
+              quantis = qs, conf = conf_level, distr = "z",
+              mu0 = pi_0, zcalc = zcalc, pval = pval)
+    class(L) <- "mytest"
+    attr(L, "test") <- "p"
+    return(L)
+}
+
+## Função para realizar testes de hipóteses para média
+testMu <- function(sum_x, sum_x2 = NULL, n, var = NULL, 
+                   mu_0 = 0, conf_level = 0.95,
+                   type = c("two.sided", "less", "greater")) {
+    type <- match.arg(type)
+    teste <- is.null(var) && n < 30
+    distr <- "z"
+    if (teste) distr <- "t"
+    ## Calcula as quantidades a partir de estatísticas suficientes
+    m <- sum_x/n
+    if (is.null(var))
+        var <- (sum_x2 - n * m^2)/(n - 1)
+    s <- sqrt(var)
+    zcalc <- sqrt(n) * (m - mu_0)/s
+    df <- n - 1
+    ## 
+    if (teste) {
+        ## P-valores conforme tipo de teste
+        switch(type,
+               "less" = {
+                   qs <- qt(1 - conf_level, df = n - 1)
+                   pval <- pt(zcalc, df)},
+               "greater" = {
+                   qs <- qt(1 - conf_level, df = n - 1, lower = FALSE)
+                   pval <- pt(zcalc, df, lower.tail = FALSE)},
+               "two.sided" = {
+                   qs <- qt((1 - conf_level)/2, df = n - 1)
+                   pval <- 2 * pt(-abs(zcalc), df)}
+               )
+    } else {
+        ## P-valores conforme tipo de teste
+        switch(type,
+               "less" = {
+                   qs <- qnorm(1 - conf_level)
+                   pval <- pnorm(zcalc)},
+               "greater" = {
+                   qs <- qnorm(1 - conf_level, lower.tail = FALSE)
+                   pval <- pnorm(zcalc, lower.tail = FALSE)},
+               "two.sided" = {
+                   qs <- qnorm((1 - conf_level)/2)
+                   pval <- 2 * pnorm(-abs(zcalc))}
+               )
+    }
+    L <- list(xbar = m, sdbar = s, n = n, type = type,
+              quantis = qs, distr = distr, conf = conf_level,
+              mu0 = mu_0, zcalc = zcalc, pval = pval)
+    class(L) <- "mytest"
+    attr(L, "test") <- "m"
+    return(L)
+}
+
+icMu <- function(obj) {
+    ic <- with(obj, xbar + c(-1, 1) * abs(quantis) * sdbar/sqrt(n))
+    out <- list(ic = ic, obj = obj)
+    attr(out, "test") <- "mu"
+    class(out) <- "ic"
+    return(out)
+}
+
+icProp <- function(obj) {
+    ic <- with(obj, xbar + c(-1, 1) * abs(quantis) * sdbar / sqrt(n))
+    out <- list(ic = ic, obj = obj)
+    attr(out, "test") <- "prop"
+    class(out) <- "ic"
+    return(out)
+}
+
+plot.ic <- function(obj, texto = TRUE, ...) {
+    type <- attr(obj, "test")
+    ## if (type == "mu") labelx <- expression(bar(X))
+    ## if (type == "prop") labelx <- expression(hat(p))
+    with(obj, {
+        plot(obj, show.line = FALSE, ...)
+        if (texto) {
+            text(0, 0.2, labels = paste0(round(obj$conf*100), "%"),
+                 cex = 1.5, col = 4)
+        }
+    })
+}
+
+drawZN <- function(lwr = -3, upr = 3, mu = 0, sigma = 1,
+                   qz = c(-1, 1), type = 1:3, angle = 45,
+                   las = 2, legend = FALSE, box = TRUE,
+                   labelx = expression(bar(X)), labelz = "Z") {
+    ##-------------------------------------------
+    ## if (labelx[1] == "barX") labelx[1] <- expression(bar(X))
+    ##-------------------------------------------
+    draw.prob <- function(x, type = 1:3) {
+        if (is.null(angle)) angle <- sample(0:90, 1)
+        if (type[1] == 1) {
+            if (x <= 0) xx <- seq(x, 0, length = 50)
+            if (x  > 0) xx <- seq(0, x, length = 50)
+        }
+        if (type[1] == 2) xx <- seq(-5, x, length = 50)
+        if (type[1] == 3) xx <- seq(x, 5, length = 50)
+        fxx <- dnorm(xx)
+        polygon(c(xx, rev(xx)), c(fxx, rep(0, 50)),
+                density = 12, angle = angle)
+    }
+    ##-------------------------------------------
+    x <- seq(lwr, upr, length.out = 100)
+    fx <- dnorm(x)
+    par(mgp = c(0, 0.5, 0), tcl = -0.3, mar = c(2.5, 1, 0, 1))
+    plot(fx ~ x, type = "l", axes = FALSE, xlab = "", ylab = "",
+         ylim = c(-0.12, max(fx) * 1.05))
+    ##-------------------------------------------
+    qx <- qz * sigma + mu
+    sapply(qz, draw.prob, type = type)
+    ##-------------------------------------------
+    axis(1, c(-10, 0, 10), labels = c("", mu, ""), line = -3, las = las)
+    axis(1, upr*1.05, labels = labelx[1], line = -2.5,
+         tick = FALSE, cex.axis = 1.3)
+    axis(1, qz, labels = round(qx, 2), line = -3, las = las)
+    axis(1, c(-10, 0, 10), labels = c("", 0, ""), las = las)
+    axis(1, upr*1.05, labels = labelz, tick = FALSE, cex.axis = 1.3)
+    axis(1, qz, labels = round(qz, 2), las = las)
+    ##-------------------------------------------
+    if (type[1] == 1) leg <- expression(P(0<=~Z<=~Z[c]))
+    if (type[1] == 2) leg <- expression(P(Z<=~Z[c]))
+    if (type[1] == 3) leg <- expression(P(Z>=~Z[c]))
+    if (legend) {
+        legend("topleft", bty = "n", density = 30,
+               legend = leg, cex = 1.2)
+    }
+    if (box) box("figure", col = "#33335B")
+}
+
+plot.mytest <- function(x, show.line = TRUE, ...) {
+    with(x, {
+        labelz <- "Z"
+        labelx <- expression(bar(X))
+        sdbar <- sdbar/sqrt(n)
+        if (distr == "t") labelz <- "t"
+        if (attr(x, "test") == "p") labelx <- expression(hat(p))
+        if (type == "two.sided") {
+            drawZN(mu = mu0, sigma = sdbar, qz = abs(quantis),
+                   type = 3, labelz = labelz, labelx = labelx, ...)
+            par(new = TRUE)
+            drawZN(mu = mu0, sigma = sdbar, qz = -abs(quantis),
+                   type = 2, labelz = labelz, labelx = labelx, ...)
+        }
+        if (type == "less") {
+            drawZN(mu = mu0, sigma = sdbar, qz = quantis,
+                   type = 2, labelz = labelz, labelx = labelx, ...)
+        }
+        if (type == "greater") {
+            drawZN(mu = mu0, sigma = sdbar, qz = quantis,
+                   type = 3, labelz = labelz, labelx = labelx, ...)
+        }
+        ## arrows(zcalc, 0.2, zcalc, 0, col = 4, length = 0.15)
+        ## abline(v = zcalc, col = 4)
+        if (show.line) {
+            segments(zcalc, -0.03, zcalc, 0.5, col = 4)
+            text(x = zcalc, y = 0.2, label = "estatística do teste",
+                 srt = 90, adj = c(0.55, -0.25), col = 4)
+        }
+        ## Estatística do teste nos eixos
+        xstat <- (zcalc * sdbar) + mu0
+        axis(1, zcalc, labels = round(zcalc, 2), las = 2, col.axis = 4)
+        axis(1, zcalc, labels = round(xstat, 2), las = 2, col.axis = 4,
+             line = -3)
+    })    
+} 
+
+```
+
+<!--------------------------------------------- -->
+<!-- Produção de Soja  -->
+\begin{defproblem}{soja}[fragile]
+
+  Um agricultor, produtor de soja, sabe que com as especificações atuais
+  cada héctare produz em média 15 toneladas de grãos. Nesta safra uma
+  amostra de 9 héctares forneceu as seguintes produções em toneladas por
+  héctare
+
+\begin{center}
+```{r, results = "asis"}
+
+x <- c(17, 13, 6, 10, 14, 17, 5, 19, 16)
+cat(paste("\\textbf{\\texttt{", paste(x, collapse = " "), "}}"))
+
+```
+\end{center}
+
+Com base nos resultados obtidos da amostra há evidências de que a
+produtividade da safra deste ano esta aquém do esperado? Considere o
+nível de significância de 5\%. \resp{estatística do teste -1.2 > valor
+de referência -1.86, não rejeita $H_0$}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\vspace{-0.6cm}
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+ex.soja <- testMu(sum_x = sum(x), sum_x2 = sum(x^2), n = length(x),
+                  mu_0 = 15, type = "less")
+
+plot(ex.soja)
+
+```
+\vfill
+\columnbreak
+Hipóteses: 
+$H_0: \mu = 15 \textrm{ vs } H_1: \mu< 15$. \\
+Informações do teste:
+$\mu_0 = 15$;
+$\alpha = `r 1-ex.soja$conf`$ \\
+Informações da amostra: 
+$\bar{x} = `r ex.soja$xbar`$;
+$S = `r ex.soja$sdbar`$;
+$n = `r ex.soja$n`$ \\
+Estatística do teste:
+$z_{calc} = \frac{\bar{x} - \mu_0}{S/\sqrt{n}} = `r ex.soja$zcalc`$ \\
+Valor de referência:
+$z_{tab} = t_{(n-1, \alpha)} = `r ex.soja$quantis`$ \\
+Consultado na tabela da distribuição t de Student com n-1 graus de
+liberdade.
+Regra de decisão:
+\begin{myalign*}
+\left\{\begin{array}{ll}
+    \textrm{Rejeita } H_0, & \textrm{se } z_{calc} < z_{tab} \\ 
+    \textrm{Não Rejeita } H_0, & \textrm{se } z_{calc} \geq z_{tab}
+\end{array}\right.
+\end{myalign*}
+
+Como $z_{calc}$ = `r ex.soja$zcalc` é maior que
+$z_{tab}$ = `r ex.soja$quantis` não temos evidências para rejeitar
+$H_0$, ou seja, não temos evidência de que a produção está
+significativamente aquém do esperado. O valor inferior a 15 pode ser
+atribuído a mera casualidade da amostra.
+
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Produção de soja - adicionais  -->
+\begin{defproblem}{soja2}
+  Considere a situação apresentada no exercício 1 para a resolução dos
+  itens abaixo: \\[0.2cm]
+  \begin{textenum}
+    \item Construa a regra de decisão do teste na escala da média.
+      \resp{Rejeita $H_0$ se $\bar{x} < 11,9$} \\[0.1cm]
+    \item Calcule o p-valor do teste de hipóteses, e conclua sobre o
+    teste a partir dele.
+      \resp{p-valor > 0,1, não rejeita $H_0$} \\[0.1cm]
+    \item Construa um intervalo de confiança para a média de grãos de
+    soja por héctare com 95\% de confiança e interprete-o.
+      \resp{IC($\mu$, 95\%): (9,16, 16,84)}
+  \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\vspace{0cm}
+
+(a) Para um teste de hipóteses unilateral à direita para a média
+rejeita-se $H_0$ quando $z_{calc} < z_{tab}$. Trabalhando com esta
+inequação temos: \vspace{-0.7cm}
+
+$$
+z_{calc} < z_{tab} \Rightarrow \hspace{0.5cm}
+\frac{\bar{x} - \mu_0}{S/\sqrt{n}} < z_{tab} \Rightarrow \hspace{0.5cm}
+\bar{x} - \mu_0 < \frac{z_{tab} \cdot S}{ \sqrt{n}} \Rightarrow \hspace{0.5cm}
+\bar{x} < \frac{z_{tab} \cdot S}{ \sqrt{n}} + \mu_0 \Rightarrow
+\hspace{0.5cm}
+\bar{x} < `r with(ex.soja, quantis * sdbar / sqrt(n) + mu0)`
+$$
+
+Assim a regra de decisão na escala da média fica
+\begin{align*}
+\left\{\begin{array}{ll}
+    \textrm{Rejeita } H_0, & \textrm{se } \bar{x} < 11,901 \\ 
+    \textrm{Não Rejeita } H_0, & \textrm{se } \bar{x} \geq 11,901
+\end{array}\right.
+\end{align*}
+
+(b) O p-valor refere-se a probabilidade de se observar algo tão
+extremo quanto o observado, sob a suposição de que a hipótese nula é
+verdadeira, ou seja, p-valor = $P(t_{n-1} < z_{calc} \mid H_0)$ = $P(t_{8} <
+`r ex.soja$zcalc` \mid H_0)$ = `r ex.soja$pval`. \\ Podemos concluir
+sobre a rejeição da hipótese nula contrastando o p-valor com o nível de
+significância adotado, como p-valor $> \alpha$ (0,132 > 0,05) então não
+há fortes evidências para rejeição de $H_0$.
+
+(c) Para construção dos intervalos de confiança temos que: $\bar{x}$ =
+13, $S = 5$, $n$ = 9 e ainda o coeficiente de confiança é de 0,95
+($\alpha$ = 0.05). Como a variância é desconhecida e ainda a amostra é
+pequena a distribuição t de Student deverá ser utilizada. Com ela
+obtemos o quantil -2.31 que atende o nível de confiança especificado, ou
+seja, $P(t_8 < -2.31)$ = 0.025. E assim o intervalo de confiança é
+determinado como \vspace{-0.3cm}
+
+$$
+\bar{X} \pm z_{\alpha/2} \cdot \frac{\sigma}{\sqrt{n}} \Rightarrow
+\hspace{0.5cm}
+13 \pm 2.31 \cdot \frac{5}{\sqrt{9}} \Rightarrow \hspace{0.5cm}
+13 \pm 1,384 \Rightarrow \hspace{0.5cm}
+IC(\mu, 95\%):\, (9,157, \, 16,843)
+$$
+
+Portanto temos 95\% de confiança de que o intervalo (9,157, 16,843)
+contenha o verdadeiro parâmetro $\mu$.
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Intervalo de confiança genérico -->
+\begin{defproblem}{icmu}
+  Considere X uma variável aleatória normalmente distribuída com média
+  $\mu$ e variância $\sigma^2$, da qual obteve-se uma amostra que
+  apresentou os seguintes resultados: $\sum_{i=1}^{64}x_i$ = 1280 e
+  $\sum_{i=1}^{64}x_i^2$ = 26167. \\[0.2cm]
+  \begin{textenum}
+    \item Construa um intervalo de confiança para média com 80\% de
+    confiança. 
+      \resp{IC($\mu$, 80\%): (18,56, 21,44)} \\[0.1cm]
+    \item Construa um intervalo de confiança para média com 90\% de
+    confiança. 
+      \resp{IC($\mu$, 90\%): (18,15, 21,85)} \\[0.1cm]
+    \item Construa um intervalo de confiança para média com 95\% de
+    confiança. 
+      \resp{IC($\mu$, 95\%): (17,80, 22,20)} \\[0.1cm]
+    \item Construa um intervalo de confiança para média com 99\% de
+    confiança. 
+      \resp{IC($\mu$, 99\%): (17,10, 22,90)}
+  \end{textenum}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\vspace{-0.5cm}
+
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+ic80 <- icMu(testMu(1280, 26167, 64, mu_0 = 20, var = 81, conf_level = 0.8))
+ic90 <- icMu(testMu(1280, 26167, 64, mu_0 = 20, var = 81, conf_level = 0.9))
+ic95 <- icMu(testMu(1280, 26167, 64, mu_0 = 20, var = 81, conf_level = 0.95))
+ic99 <- icMu(testMu(1280, 26167, 64, mu_0 = 20, var = 81, conf_level = 0.99))
+
+plot(ic80, texto = FALSE, angle = 45, lwr = -3.5, upr = 3.5)
+par(new = TRUE)
+plot(ic90, texto = FALSE, angle = 45, lwr = -3.5, upr = 3.5)
+par(new = TRUE)
+plot(ic95, texto = FALSE, angle = 45, lwr = -3.5, upr = 3.5)
+par(new = TRUE)
+plot(ic99, texto = FALSE, angle = 45, lwr = -3.5, upr = 3.5)
+##-------------------------------------------
+
+qs <- sapply(list(ic80, ic90, ic95, ic99),
+             function(obj) obj$obj$quantis)
+yl <- seq(0.1, 0.3, length.out = 4)
+segments(qs, yl, -qs, yl, col = 4, lty = 2)
+segments(c(qs, -qs), -0.02, c(qs, -qs), c(yl, yl), col = 4, lty = 2)
+text(x = 0, y = yl - 0.02, labels = paste0(c(80, 90, 95, 99), "%"),
+     col = 4)
+
+```
+
+\columnbreak
+
+Do exercício temos que \\
+$\bar{x} = \frac{\sum_{i=1}^{n} x_i}{n} = \frac{320}{16} = 20$\\
+$S^2 = \frac{\sum_{i=1}^{n} x_i^2 - n \cdot \bar{x}^2}{n-1} =
+\frac{26167 - 64 \cdot 20^2}{64-1} = 9 \Rightarrow 
+S = \sqrt{9} = 3$
+
+E um intervalo de confiança para média com 1-$\alpha$ de confiança é
+dado por IC($\mu,\, 1-\alpha$): $\bar{x} \pm
+z_{\alpha/2}\frac{S}{\sqrt{n}}$, em que $z_{\alpha/2}$ é o quantil da
+distribuição Normal(0, 1), tal que $P(Z < z_{\alpha/2}$) = $\alpha/2$.
+
+(a) $\alpha = 0,2 \Rightarrow z_{0,1} = 1,28$\\
+IC($\mu\, 80\%$): $20 \pm 1,28 \cdot 3/\sqrt{64} \Rightarrow (`r ic80$ic`)$
+
+(b) $\alpha = 0,1 \Rightarrow z_{0,05} = 1,64$\\
+IC($\mu\, 90\%$): $20 \pm 1,64 \cdot 3/\sqrt{64} \Rightarrow (`r ic90$ic`)$
+
+(c) $\alpha = 0,05 \Rightarrow z_{0,025} = 1,96$\\
+IC($\mu\, 95\%$): $20 \pm 1,96 \cdot 3/\sqrt{64} \Rightarrow (`r ic95$ic`)$
+
+(d) $\alpha = 0,01 \Rightarrow z_{0,005} = 2,58$\\
+IC($\mu\, 99\%$): $20 \pm 2,58 \cdot 3/\sqrt{64} \Rightarrow (`r ic99$ic`)$
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Intervalo de confiança para proporção  -->
+\begin{defproblem}{voto}
+
+  Uma pesquisa eleitoral realizada com uma amostra de 400 eleitores de
+  uma cidade do Paraná indicou que 140 deles são a favor do candidato
+  A. Determine um intervalo de confiança para a proporção de eleitores
+  favoráveis ao candidato A nesta cidade. Considere um nível de
+  confiança de 95\%. \resp{IC($\pi$, 95\%): (0,303, 0,397)}
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\vspace{-0.5cm}
+
+```{r}
+
+ex.voto <- icProp(testProp(140, 400, pi_0 = 140/400))
+
+```
+
+x: número de eleitores favoráveis ao candidato A \\
+n: número total de eleitores na amostra \\
+$\hat{p}$: proporção de eleitores favoráveis ao candidato
+A. $\hat{p}=\frac{x}{n} = \frac{140}{400} = 0,35$ 
+
+Intervalo de confiança para proporção:
+
+$$
+\hat{p} \pm z_{\alpha/2}\sqrt{\frac{\hat{p} \cdot (1-\hat{p})}{n}}
+\Rightarrow \hspace{0.5cm}
+0,35 \pm 1,96 \cdot \sqrt{\frac{0,35 \cdot 0,65}{400}} \Rightarrow
+\hspace{0.5cm}
+0,35 \pm `r with(ex.voto$obj, -quantis * sdbar / sqrt(n))` \Rightarrow
+\hspace{0.5cm}
+IC(\pi,\, 95\%): (`r ex.voto$ic`)
+$$
+
+Portanto temos 95\% de confiança de que o intervalo (`r ex.voto$ic`)
+contenha o verdadeiro parâmetro $\pi$, proporção de eleitores favoráveis
+ao cadidato A. 
+.
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Lançamento de moeda -->
+\begin{defproblem}{moeda}
+
+  João um estudante do ensino médio, ao voltar de uma aula sobre
+  probabilidades onde um exemplo com lançamento de moedas foi
+  apresentado, decidiu avaliar se uma moeda com uma pequena deformação
+  era honesta. Para tal avaliação João lançou a moeda 50 vezes e obteve
+  18 caras. Considerando o experimento do João temos evidências sobre a
+  não honestidade de sua moeda? Considere um nível de significância de
+  0,1. \resp{estatística do teste |-1.98| > valor de referência 1.64, 
+  rejeita $H_0$} 
+\begin{onlysolution}
+\newline \it \color{black!80!blue!80}
+\vspace{-0.5cm}
+
+\begin{multicols}{2}
+
+```{r, fig.height = 3.5, fig.width = 4}
+
+ex.moeda <- testProp(x = 18, n = 50, pi_0 = 0.5,
+                     conf_level = 0.9, type = "two.sided")
+
+plot(ex.moeda)
+
+```
+
+\vfill
+\columnbreak
+Hipóteses: 
+$H_0: \pi = 0,5 \textrm{ vs } H_1: \pi \neq 0,5$. \\
+Informações do teste:
+$\pi_0 = 0,5$;
+$\alpha = `r 1-ex.moeda$conf`$ \\
+Informações da amostra: 
+$n = `r ex.moeda$n`$ \\
+$\hat{p} = \frac{18}{50} = `r ex.moeda$xbar`$; \\
+Estatística do teste:
+$z_{calc} = \frac{\hat{p} - \pi_0}{\sqrt{\hat{p}\cdot (1-\hat{p})/n}} =
+`r ex.moeda$zcalc`$ \\
+Valor de referência:
+$z_{tab} = z_{\alpha/2} = `r -ex.moeda$quantis`$ \\
+Consultado na tabela da distribuição Z (Normal(0, 1)). \\
+Regra de decisão:
+\begin{myalign*}
+\left\{\begin{array}{ll}
+    \textrm{Rejeita } H_0, & \textrm{se } |z_{calc}| > z_{tab} \\ 
+    \textrm{Não Rejeita } H_0, & \textrm{caso contrário}
+\end{array}\right.
+\end{myalign*}
+
+Como $|z_{calc}|$ = `r -ex.moeda$zcalc` é maior que
+$z_{tab}$ = `r -ex.moeda$quantis` temos evidências para rejeitar
+$H_0$, ou seja, há evidências de que a moeda de João não é
+honesta. Todavia, note que se tivéssemos considerado $\alpha$ = 0,05 a
+decisão seria complicada, nestes casos o ideal é aumentar o tamanho da
+amostra, neste exprimento, lançar mais vezes a moeda.
+\end{multicols}
+\end{onlysolution}
+\end{defproblem}
+
+<!--------------------------------------------- -->
+<!-- Prefacio -->
+\begin{onlysolution}
+  Na resolução detalhada dos exercícios adota-se a notação conforme
+  descrito abaixo.
+  \begin{itemize}
+    \itemsep3.5pt\parskip0pt\parsep0pt
+    \item $\mu$: média populacional
+    \item $\pi$: proporção populacional
+    \item $\sigma^2$: variância populacional
+    \item $\bar{x}$: média amostral
+    \item $\hat{p}$: proporção amostral
+    \item $S^2$: variância amostral
+    \item $Z$: variável aleatória sob distribuição Normal(0, 1)
+    \item IC($\theta$, (1-$\alpha$)*100\%): intervalo de confiança para
+    o parâmetro $\theta$ com confiança de (1-$\alpha$)*100\% 
+    \item $t_{n-1}$: variável aleatória sob distribuição t de Student
+    com n-1 graus de liberdade
+    \item $z_{calc}$: estatística de um teste de hipóteses. Assume as
+    expressões e distribuições conforme abaixo:
+      \begin{itemize}
+        \itemsep3.5pt\parskip0pt\parsep0pt
+        \item teste para média com variância conhecida ou n > 30
+        \footnote{O tamanho de amostra é colocado em várias obras de
+        Estatística Básica, porém resssalta-se que a estatística do
+        teste não segue distribuição Normal(0, 1) quando a variância é
+        desconhecida, independente do tamanho da amostra.}.
+        $z_{calc}$ =
+        $\begin{aligned} 
+            &\frac{\bar{x} - \mu_0}{\sigma/\sqrt{n}} \sim Normal(0,1)&
+        \end{aligned}$
+        \item teste para média com variância desconhecida e n < 30.
+        $z_{calc}$ =
+        $\begin{aligned} 
+            &\frac{\bar{x} - \mu_0}{S/\sqrt{n}} \sim t_{n-1}&
+        \end{aligned}$
+        \item teste para proporção.
+        $z_{calc}$ =
+        $\begin{aligned} 
+            &\frac{\hat{p} - \pi_0}{\sqrt{\hat{p} \cdot (1-\hat{p})/n}}
+            \sim Normal(0, 1)& 
+        \end{aligned}$
+      \end{itemize}
+  \end{itemize}
+\end{onlysolution}
+
+<!--==================================================================== -->
+<!-- Exibe os exercícios elaborados  -->
+
+\pagebreak
+\begin{enumerate}[leftmargin=*]
+    \renewcommand\labelenumi{\bfseries\theenumi.}
+    \item \useproblem{soja}
+    \item \useproblem{soja2}
+    \item \useproblem{icmu}
+    \item \useproblem{voto}
+    \pagebreak
+    \item \useproblem{moeda}
+\end{enumerate}
