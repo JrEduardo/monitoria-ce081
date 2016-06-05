@@ -12,3 +12,5 @@ de Estatística de Universidade Federal do Paraná.
 Os materiais já elaborados são:
 
  - [Exercícios Distribuição Poisson](https://github.com/JrEduardo/monitoria-ce081/blob/master/lista01.pdf)
+ - [Exercícios Distribuição Normal](https://github.com/JrEduardo/monitoria-ce081/blob/master/lista02.pdf)
+ - [Exercícios IC e Testes de Hipóteses](https://github.com/JrEduardo/monitoria-ce081/blob/master/lista03.pdf)
